@@ -34,6 +34,29 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Champs requis manquants" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Input validation - length limits to prevent abuse
+    const maxLen = 1000;
+    const shortMax = 200;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    if (!uuidRegex.test(premium_access_id)) {
+      return new Response(JSON.stringify({ error: "ID d'accès invalide" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (typeof university_name !== "string" || university_name.length > shortMax ||
+        typeof program_name !== "string" || program_name.length > shortMax) {
+      return new Response(JSON.stringify({ error: "Nom trop long (max 200 caractères)" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const optionalFields = { refusal_reason, context, academic_project, why_reconsider, new_elements, supporting_notes };
+    for (const [key, val] of Object.entries(optionalFields)) {
+      if (val !== undefined && val !== null && (typeof val !== "string" || val.length > maxLen)) {
+        return new Response(JSON.stringify({ error: `Champ ${key} trop long (max 1000 caractères)` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+    const validTones = ["formal", "determined", "empathetic"];
+    if (tone && !validTones.includes(tone)) {
+      return new Response(JSON.stringify({ error: "Ton invalide" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
