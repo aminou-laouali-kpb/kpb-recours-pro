@@ -24,26 +24,36 @@ export default function Activation() {
     setLoading(true);
     trackEvent("activation_started", { email });
 
-    // Check the activation code via edge function
-    const { data, error } = await supabase.functions.invoke("activate-code", {
-      body: { email: email.trim(), code: code.trim() },
-    });
+    try {
+      const { data, error } = await supabase.functions.invoke("activate-code", {
+        body: { email: email.trim(), code: code.trim() },
+      });
 
-    setLoading(false);
-    if (error || data?.error) {
-      toast({ title: "Erreur", description: data?.error || "Code invalide ou expiré", variant: "destructive" });
-      return;
+      if (error || data?.error) {
+        toast({ title: "Erreur", description: data?.error || "Code invalide ou expiré", variant: "destructive" });
+        return;
+      }
+
+      setSuccess(true);
+      trackEvent("activation_completed", { email });
+      toast({ title: "Activé !", description: "Ton accès premium est maintenant actif." });
+
+      await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: { emailRedirectTo: window.location.origin + "/premium/dashboard" },
+      });
+    } catch (err: any) {
+      const isNetwork = err?.message?.includes("Failed to fetch") || err?.name === "TypeError";
+      toast({
+        title: isNetwork ? "Erreur réseau" : "Erreur",
+        description: isNetwork
+          ? "Impossible de contacter le serveur. Essaie depuis l'URL publiée de l'application ou vérifie ta connexion internet."
+          : (err?.message || "Une erreur inattendue est survenue"),
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-
-    setSuccess(true);
-    trackEvent("activation_completed", { email });
-    toast({ title: "Activé !", description: "Ton accès premium est maintenant actif." });
-
-    // Sign in the user
-    await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: window.location.origin + "/premium/dashboard" },
-    });
   };
 
   if (success) {
