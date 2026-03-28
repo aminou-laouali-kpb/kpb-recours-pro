@@ -15,6 +15,7 @@ import AccessCheck from "./pages/AccessCheck";
 import PaymentReturn from "./pages/PaymentReturn";
 import PaymentCancel from "./pages/PaymentCancel";
 import PaymentSuccess from "./pages/PaymentSuccess";
+import Payer from "./pages/Payer";
 import PremiumDashboard from "./pages/premium/Dashboard";
 import NouvelleLettre from "./pages/premium/NouvelleLettre";
 import Historique from "./pages/premium/Historique";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/connexion" element={<Connexion />} />
             <Route path="/activation" element={<Activation />} />
             <Route path="/access-check" element={<AccessCheck />} />
+            <Route path="/payer" element={<Payer />} />
             <Route path="/payments/moneyfusion/return" element={<PaymentReturn />} />
             <Route path="/payments/moneyfusion/cancel" element={<PaymentCancel />} />
             <Route path="/payments/moneyfusion/success" element={<PaymentSuccess />} />

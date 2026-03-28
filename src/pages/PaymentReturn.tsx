@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Clock, Mail } from "lucide-react";
 import { useTrackEvent } from "@/hooks/useTrackEvent";
 
 type Status = "loading" | "success" | "pending" | "failed";
@@ -11,22 +11,21 @@ type Status = "loading" | "success" | "pending" | "failed";
 export default function PaymentReturn() {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<Status>("loading");
+  const [attempts, setAttempts] = useState(0);
   const navigate = useNavigate();
   const trackEvent = useTrackEvent();
 
-  useEffect(() => {
-    trackEvent("payment_return_viewed");
-    checkPayment();
-  }, []);
+  const checkPayment = useCallback(async () => {
+    const reference =
+      searchParams.get("reference") ||
+      searchParams.get("ref") ||
+      searchParams.get("order_id");
 
-  async function checkPayment() {
-    const reference = searchParams.get("reference") || searchParams.get("ref") || searchParams.get("order_id");
     if (!reference) {
       setStatus("failed");
       return;
     }
 
-    // TODO: Call backend to verify payment with Money Fusion / Maketu
     const { data: order } = await supabase
       .from("orders")
       .select("status")
@@ -38,10 +37,29 @@ export default function PaymentReturn() {
       trackEvent("payment_verified", { reference });
     } else if (order?.status === "pending") {
       setStatus("pending");
-    } else {
+    } else if (order?.status === "failed") {
       setStatus("failed");
+    } else {
+      setStatus("pending");
     }
-  }
+  }, [searchParams, trackEvent]);
+
+  useEffect(() => {
+    trackEvent("payment_return_viewed");
+    checkPayment();
+  }, []);
+
+  // Polling for pending payments
+  useEffect(() => {
+    if (status !== "pending" || attempts >= 12) return;
+
+    const timer = setTimeout(() => {
+      setAttempts((a) => a + 1);
+      checkPayment();
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [status, attempts, checkPayment]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -58,9 +76,18 @@ export default function PaymentReturn() {
             <>
               <CheckCircle className="h-12 w-12 text-success mx-auto" />
               <h2 className="text-xl font-bold">Paiement confirmé !</h2>
-              <p className="text-sm text-muted-foreground">Ton accès premium est maintenant actif.</p>
-              <Button onClick={() => navigate("/premium/dashboard")} className="gradient-premium text-primary-foreground">
-                Accéder à mon espace
+              <p className="text-sm text-muted-foreground">
+                Ton accès premium est maintenant actif.
+              </p>
+              <div className="flex items-center gap-2 justify-center text-sm text-muted-foreground bg-accent rounded-lg p-3">
+                <Mail className="h-4 w-4 shrink-0" />
+                <span>Vérifie ta boîte mail pour ton lien de connexion.</span>
+              </div>
+              <Button
+                onClick={() => navigate("/connexion")}
+                className="gradient-premium text-primary-foreground"
+              >
+                Se connecter
               </Button>
             </>
           )}
@@ -69,9 +96,17 @@ export default function PaymentReturn() {
               <Clock className="h-12 w-12 text-warning mx-auto" />
               <h2 className="text-xl font-bold">Paiement en cours de vérification</h2>
               <p className="text-sm text-muted-foreground">
-                Ton paiement est en cours de traitement. Tu recevras un email de confirmation dès que c'est validé.
+                Ton paiement est en cours de traitement. Cette page se met à jour automatiquement.
               </p>
-              <Button variant="outline" onClick={() => navigate("/")}>Retour à l'accueil</Button>
+              {attempts > 0 && (
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Vérification {attempts}/12...
+                </div>
+              )}
+              <Button variant="outline" onClick={() => navigate("/")}>
+                Retour à l'accueil
+              </Button>
             </>
           )}
           {status === "failed" && (
@@ -81,7 +116,9 @@ export default function PaymentReturn() {
               <p className="text-sm text-muted-foreground">
                 Nous n'avons pas pu vérifier ton paiement. Si tu as payé, contacte notre support.
               </p>
-              <Button variant="outline" onClick={() => navigate("/")}>Retour à l'accueil</Button>
+              <Button variant="outline" onClick={() => navigate("/")}>
+                Retour à l'accueil
+              </Button>
             </>
           )}
         </CardContent>
