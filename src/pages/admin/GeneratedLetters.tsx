@@ -12,17 +12,18 @@ export default function AdminGeneratedLetters() {
   const { data: letters = [] } = useQuery({
     queryKey: ["admin-letters"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("generated_letters")
-        .select("*, profiles!generated_letters_user_id_fkey(email, full_name)")
-        .order("created_at", { ascending: false });
-      return data ?? [];
+      const { data: letterData } = await supabase.from("generated_letters").select("*").order("created_at", { ascending: false });
+      if (!letterData) return [];
+      const userIds = [...new Set(letterData.map(l => l.user_id))];
+      const { data: profiles } = await supabase.from("profiles").select("user_id, email, full_name").in("user_id", userIds);
+      const profileMap = new Map((profiles ?? []).map(p => [p.user_id, p]));
+      return letterData.map(l => ({ ...l, profile: profileMap.get(l.user_id) ?? null }));
     },
   });
 
   const filtered = letters.filter((l: any) => {
     const s = search.toLowerCase();
-    return !s || l.profiles?.email?.toLowerCase().includes(s) || l.university_name?.toLowerCase().includes(s);
+    return !s || l.profile?.email?.toLowerCase().includes(s) || l.university_name?.toLowerCase().includes(s);
   });
 
   return (
@@ -43,17 +44,13 @@ export default function AdminGeneratedLetters() {
             <TableBody>
               {filtered.map((l: any) => (
                 <TableRow key={l.id}>
-                  <TableCell className="text-xs">{l.profiles?.email ?? "—"}</TableCell>
+                  <TableCell className="text-xs">{l.profile?.email ?? "—"}</TableCell>
                   <TableCell className="text-xs">{l.university_name}</TableCell>
                   <TableCell className="text-xs">{l.program_name}</TableCell>
                   <TableCell className="text-xs">{new Date(l.created_at).toLocaleDateString("fr-FR")}</TableCell>
                 </TableRow>
               ))}
-              {filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">Aucune lettre</TableCell>
-                </TableRow>
-              )}
+              {filtered.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">Aucune lettre</TableCell></TableRow>}
             </TableBody>
           </Table>
         </Card>
