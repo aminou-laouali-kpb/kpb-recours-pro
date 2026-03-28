@@ -192,17 +192,20 @@ export default function NouveletteLettre() {
           <Card>
             <CardHeader><CardTitle className="text-lg">Informations sur la candidature</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label>Nom de l'université / école</Label>
                 <Input placeholder="Ex: Université de Lyon 2" value={form.university_name} onChange={(e) => updateField("university_name", e.target.value)} />
+                <p className="text-xs text-muted-foreground">Ex : « Université Paris-Saclay », « INSA Lyon », « Université de Strasbourg »</p>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label>Programme / formation</Label>
                 <Input placeholder="Ex: Licence 3 Économie" value={form.program_name} onChange={(e) => updateField("program_name", e.target.value)} />
+                <p className="text-xs text-muted-foreground">Ex : « Master 1 Informatique », « Licence 3 Économie-Gestion », « DUT GEA »</p>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label>Motif de refus (si connu)</Label>
                 <Input placeholder="Ex: Dossier incomplet, profil non retenu..." value={form.refusal_reason} onChange={(e) => updateField("refusal_reason", e.target.value)} />
+                <p className="text-xs text-muted-foreground">Ex : « Capacité d'accueil atteinte », « Dossier jugé insuffisant », « Pièces manquantes »</p>
               </div>
               <Button onClick={() => setStep(2)} className="w-full gradient-premium text-primary-foreground" disabled={!form.university_name || !form.program_name}>
                 Suivant <ArrowRight className="ml-2 h-4 w-4" />
@@ -215,17 +218,20 @@ export default function NouveletteLettre() {
           <Card>
             <CardHeader><CardTitle className="text-lg">Ton projet académique</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label>Contexte de ta candidature</Label>
                 <Textarea placeholder="Décris brièvement ta situation..." value={form.context} onChange={(e) => updateField("context", e.target.value)} rows={3} />
+                <p className="text-xs text-muted-foreground">Ex : « Je suis actuellement en L2 Économie au Maroc et j'ai postulé via Études en France pour une L3 à Lyon 2... »</p>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label>Résumé de ton projet académique</Label>
                 <Textarea placeholder="Quel est ton parcours et ton objectif en France ?" value={form.academic_project} onChange={(e) => updateField("academic_project", e.target.value)} rows={3} />
+                <p className="text-xs text-muted-foreground">Ex : « Je souhaite me spécialiser en finance d'entreprise et obtenir un Master en France pour travailler dans le conseil... »</p>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label>Pourquoi demander un réexamen ?</Label>
                 <Textarea placeholder="Explique ce qui justifie ta demande de recours..." value={form.why_reconsider} onChange={(e) => updateField("why_reconsider", e.target.value)} rows={3} />
+                <p className="text-xs text-muted-foreground">Ex : « Mon dossier ne reflétait pas mes dernières notes du semestre, qui montrent une nette progression... »</p>
               </div>
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
@@ -243,13 +249,15 @@ export default function NouveletteLettre() {
           <Card>
             <CardHeader><CardTitle className="text-lg">Éléments complémentaires</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label>Nouveaux éléments ou clarifications</Label>
                 <Textarea placeholder="Y a-t-il de nouvelles informations à ajouter ?" value={form.new_elements} onChange={(e) => updateField("new_elements", e.target.value)} rows={3} />
+                <p className="text-xs text-muted-foreground">Ex : « J'ai obtenu une certification B2 en français depuis ma candidature », « Mon relevé de notes du S2 n'était pas inclus »</p>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label>Notes supplémentaires (optionnel)</Label>
                 <Textarea placeholder="Tout autre détail pertinent..." value={form.supporting_notes} onChange={(e) => updateField("supporting_notes", e.target.value)} rows={2} />
+                <p className="text-xs text-muted-foreground">Ex : « J'ai une lettre de recommandation de mon professeur principal »</p>
               </div>
               <div className="space-y-2">
                 <Label>Ton souhaité</Label>
