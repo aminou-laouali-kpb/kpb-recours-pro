@@ -14,13 +14,326 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activation_codes: {
+        Row: {
+          activated_at: string | null
+          code: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          order_id: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          code: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          order_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          code?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          order_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_codes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_emails: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          assessment_id: string | null
+          created_at: string
+          event_name: string
+          id: string
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          assessment_id?: string | null
+          created_at?: string
+          event_name: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          assessment_id?: string | null
+          created_at?: string
+          event_name?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "free_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      free_assessments: {
+        Row: {
+          created_at: string
+          current_academic_level: string | null
+          field_of_study: string | null
+          id: string
+          institutions_applied_to: string[] | null
+          program_applied_for: string | null
+          recommended_next_step: string | null
+          result_category: string | null
+          result_explanation: string | null
+          target_level_in_france: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_academic_level?: string | null
+          field_of_study?: string | null
+          id?: string
+          institutions_applied_to?: string[] | null
+          program_applied_for?: string | null
+          recommended_next_step?: string | null
+          result_category?: string | null
+          result_explanation?: string | null
+          target_level_in_france?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_academic_level?: string | null
+          field_of_study?: string | null
+          id?: string
+          institutions_applied_to?: string[] | null
+          program_applied_for?: string | null
+          recommended_next_step?: string | null
+          result_category?: string | null
+          result_explanation?: string | null
+          target_level_in_france?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      generated_letters: {
+        Row: {
+          created_at: string
+          id: string
+          input_payload: Json
+          letter_text: string
+          premium_access_id: string
+          program_name: string
+          university_name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          input_payload?: Json
+          letter_text: string
+          premium_access_id: string
+          program_name: string
+          university_name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          input_payload?: Json
+          letter_text?: string
+          premium_access_id?: string
+          program_name?: string
+          university_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_letters_premium_access_id_fkey"
+            columns: ["premium_access_id"]
+            isOneToOne: false
+            referencedRelation: "premium_access"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          amount: number
+          assessment_id: string | null
+          created_at: string
+          currency: string
+          id: string
+          paid_at: string | null
+          payment_payload: Json | null
+          provider: string
+          reference: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          assessment_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          payment_payload?: Json | null
+          provider?: string
+          reference?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          assessment_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          payment_payload?: Json | null
+          provider?: string
+          reference?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "free_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      premium_access: {
+        Row: {
+          assessment_id: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          max_letters: number
+          order_id: string | null
+          status: string
+          used_letters: number
+          user_id: string
+        }
+        Insert: {
+          assessment_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          max_letters?: number
+          order_id?: string | null
+          status?: string
+          used_letters?: number
+          user_id: string
+        }
+        Update: {
+          assessment_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          max_letters?: number
+          order_id?: string | null
+          status?: string
+          used_letters?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_access_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "free_assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "premium_access_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          country: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          nationality: string | null
+          updated_at: string
+          user_id: string
+          whatsapp_number: string | null
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          nationality?: string | null
+          updated_at?: string
+          user_id: string
+          whatsapp_number?: string | null
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          nationality?: string | null
+          updated_at?: string
+          user_id?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: { check_email: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
