@@ -7,11 +7,11 @@ export function useTrackEvent() {
 
   return useCallback(
     async (eventName: string, metadata?: Record<string, unknown>) => {
-      await supabase.from("events").insert({
+      await supabase.from("events").insert([{
         user_id: user?.id ?? null,
         event_name: eventName,
         metadata: metadata ?? {},
-      });
+      }]);
     },
     [user]
   );
