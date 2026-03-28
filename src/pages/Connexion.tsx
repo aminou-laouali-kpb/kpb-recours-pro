@@ -18,15 +18,27 @@ export default function Connexion() {
     e.preventDefault();
     if (!email.trim()) return;
     setLoading(true);
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: window.location.origin + "/premium/dashboard" },
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    } else {
-      setSent(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: { emailRedirectTo: window.location.origin + "/premium/dashboard" },
+      });
+      if (error) {
+        toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      } else {
+        setSent(true);
+      }
+    } catch (err: any) {
+      const isNetwork = err?.message?.includes("Failed to fetch") || err?.name === "TypeError";
+      toast({
+        title: isNetwork ? "Erreur réseau" : "Erreur",
+        description: isNetwork
+          ? "Impossible de contacter le serveur. Essaie depuis l'URL publiée de l'application ou vérifie ta connexion internet."
+          : (err?.message || "Une erreur inattendue est survenue"),
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
