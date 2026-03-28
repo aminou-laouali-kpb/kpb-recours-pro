@@ -1,44 +1,35 @@
 
 
-# KPB Recours Premium — Plan d'implémentation
+# Diagnostic et plan de correction
 
-## ⚠️ Note importante sur la base de données
-Vous avez choisi Lovable Cloud, qui crée sa propre instance Supabase. Pour partager la même base de données que l'app gratuite, il faudra soit connecter ce projet à votre Supabase existant, soit synchroniser les données. Nous commencerons avec Lovable Cloud et ajusterons si nécessaire.
+## Constat
 
-## Phase 1 — Fondations
-- Activer Lovable Cloud et configurer le thème premium (couleurs chaudes, typographie lisible, mobile-first)
-- Créer les tables nécessaires : `users`, `free_assessments`, `orders`, `premium_access`, `activation_codes`, `generated_letters`, `events` avec RLS
-- Configurer l'authentification email/magic-link
-- Créer une table `admin_emails` pour identifier les administrateurs
-- Mettre en place les routes et la navigation
+1. **L'activation a réussi** — j'ai testé directement la fonction backend et elle a fonctionné. Ton compte (`idrisslaouali@gmail.com`) existe avec un accès premium actif (3 lettres disponibles).
 
-## Phase 2 — Accès & Activation
-- **Page d'accueil** (`/`) : présentation premium avec CTA vers connexion/activation
-- **Connexion** (`/connexion`) : email + magic link
-- **Activation** (`/activation`) : saisie email + code d'activation, validation backend
-- **Pages paiement** (`/payments/moneyfusion/return`, `/success`, `/cancel`) : gestion des retours de paiement avec vérification de commande et redirection
-- **Vérification d'accès** (`/access-check`) : statut de l'accès premium
-- Protection des routes premium (accès actif + quota non épuisé)
+2. **Le problème est réseau** — les requêtes depuis la prévisualisation Lovable échouent avec "Failed to fetch". Cela touche à la fois l'activation ET la connexion magic link. Les logs backend confirment qu'aucune requête OTP n'a atteint le serveur.
 
-## Phase 3 — Espace Premium
-- **Dashboard** (`/premium/dashboard`) : statut accès, lettres restantes (X/3), résumé dossier, bouton "Créer une nouvelle lettre", historique, bloc upsell école privée
-- **Nouvelle lettre** (`/premium/nouvelle-lettre`) : formulaire multi-étapes (université, programme, motif refus, contexte, projet académique, arguments, ton souhaité) avec pré-remplissage depuis `free_assessments`
-- **Génération IA** via edge function utilisant Lovable AI Gateway — lettres en français, ton académique et respectueux, structure formelle complète
-- **Historique** (`/premium/historique`) : liste des lettres avec copie, téléchargement .txt, date, université
-- **Mon accès** (`/premium/mon-acces`) : détails premium, quota, statut
+3. **Le code d'activation `TEST-PREMIUM-2026` est maintenant marqué "used"** — il ne fonctionnera plus. Il faudra en créer un nouveau pour tester à nouveau.
 
-## Phase 4 — Admin
-- Zone admin protégée par emails spécifiques
-- **Accès premium** (`/admin/premium-access`) : liste filtrable, statut, lettres utilisées
-- **Commandes** (`/admin/orders`) : liste avec filtres email/pays/statut
-- **Lettres générées** (`/admin/generated-letters`) : consultation et filtres
-- Cartes métriques : accès actifs, paiements en attente, total lettres, moyenne lettres/utilisateur
-- Export CSV
+## Corrections à apporter
 
-## Phase 5 — Finitions
-- Disclaimers juridiques dans l'UI (pas d'avis juridique, pas de garantie)
-- Tracking d'événements (vues, activation, génération, quota atteint, clic upsell)
-- États vides/erreur/succès en français (quota épuisé, paiement en attente, code invalide…)
-- Bloc upsell "Sécuriser un plan B" sur le dashboard et après chaque lettre générée
-- Placeholders et TODO pour intégration Money Fusion / Maketu
+### 1. Améliorer la gestion d'erreur réseau dans Connexion.tsx et Activation.tsx
+- Ajouter un retry automatique en cas de "Failed to fetch"
+- Afficher un message d'erreur plus clair distinguant erreur réseau vs erreur métier
+
+### 2. Corriger le redirect URL pour la prévisualisation
+- Utiliser `window.location.origin` correctement pour supporter à la fois l'URL de preview et l'URL publiée
+- S'assurer que l'URL de redirection après magic link fonctionne dans tous les contextes
+
+### 3. Créer un nouveau code d'activation test
+- Insérer un nouveau code via migration SQL puisque l'ancien est consommé
+
+### 4. Tester la connexion
+- Puisque ton compte existe déjà, tu peux directement aller sur `/connexion`, entrer ton email et recevoir le magic link
+- Si le problème persiste en preview, publier l'app et tester depuis l'URL publiée
+
+## Détails techniques
+
+- Les fichiers modifiés : `src/pages/Connexion.tsx`, `src/pages/Activation.tsx`
+- Ajout d'un `try/catch` avec détection de `TypeError: Failed to fetch` pour afficher "Erreur de connexion réseau, veuillez réessayer"
+- Nouveau code test inséré via migration : `TEST-PREMIUM-2027`
 
