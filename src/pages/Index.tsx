@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, FileText, Sparkles, ArrowRight } from "lucide-react";
+import { Shield, FileText, Sparkles, ArrowRight, CreditCard } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -38,12 +38,18 @@ const Index = () => {
               ) : (
                 <>
                   <Button asChild size="lg" className="gradient-premium text-primary-foreground shadow-premium">
+                    <Link to="/payer">
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Obtenir l'accès — 5 000 FCFA
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg">
                     <Link to="/connexion">
                       Se connecter
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" size="lg">
+                  <Button asChild variant="ghost" size="lg">
                     <Link to="/activation">J'ai un code d'activation</Link>
                   </Button>
                 </>
