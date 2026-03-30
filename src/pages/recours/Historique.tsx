@@ -1,16 +1,18 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PremiumLayout } from "@/components/PremiumLayout";
+import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy, Download, FileText } from "lucide-react";
 import { useState } from "react";
 import { Disclaimer } from "@/components/Disclaimer";
+import { useTrackEvent } from "@/hooks/useTrackEvent";
 
 export default function Historique() {
   const { user } = useAuth();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const trackEvent = useTrackEvent();
 
   const { data: letters = [] } = useQuery({
     queryKey: ["letters", user?.id],
@@ -27,6 +29,7 @@ export default function Historique() {
 
   const handleCopy = async (text: string) => {
     await navigator.clipboard.writeText(text);
+    trackEvent("recours_copied");
   };
 
   const handleDownload = (text: string, university: string) => {
@@ -37,18 +40,19 @@ export default function Historique() {
     a.download = `recours_${university.replace(/\s+/g, "_")}.txt`;
     a.click();
     URL.revokeObjectURL(url);
+    trackEvent("recours_downloaded");
   };
 
   return (
-    <PremiumLayout>
+    <AppLayout>
       <div className="space-y-5 max-w-2xl mx-auto">
-        <h2 className="text-xl font-bold">Historique des lettres</h2>
+        <h2 className="text-xl font-bold">Historique des recours</h2>
 
         {letters.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="p-8 text-center space-y-2">
               <FileText className="h-10 w-10 text-muted-foreground mx-auto" />
-              <p className="text-sm text-muted-foreground">Aucune lettre générée pour l'instant.</p>
+              <p className="text-sm text-muted-foreground">Aucun recours généré pour l'instant.</p>
             </CardContent>
           </Card>
         ) : (
@@ -64,16 +68,9 @@ export default function Historique() {
                     {new Date(letter.created_at).toLocaleDateString("fr-FR")}
                   </span>
                 </div>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs"
-                  onClick={() => setExpandedId(expandedId === letter.id ? null : letter.id)}
-                >
+                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setExpandedId(expandedId === letter.id ? null : letter.id)}>
                   {expandedId === letter.id ? "Réduire" : "Voir la lettre"}
                 </Button>
-
                 {expandedId === letter.id && (
                   <div className="space-y-3">
                     <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans bg-muted/50 p-4 rounded-lg">
@@ -95,6 +92,6 @@ export default function Historique() {
         )}
         <Disclaimer />
       </div>
-    </PremiumLayout>
+    </AppLayout>
   );
 }

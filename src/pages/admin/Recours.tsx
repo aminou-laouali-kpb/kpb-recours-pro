@@ -6,11 +6,11 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 
-export default function AdminGeneratedLetters() {
+export default function AdminRecours() {
   const [search, setSearch] = useState("");
 
   const { data: letters = [] } = useQuery({
-    queryKey: ["admin-letters"],
+    queryKey: ["admin-recours"],
     queryFn: async () => {
       const { data: letterData } = await supabase.from("generated_letters").select("*").order("created_at", { ascending: false });
       if (!letterData) return [];
@@ -23,18 +23,19 @@ export default function AdminGeneratedLetters() {
 
   const filtered = letters.filter((l: any) => {
     const s = search.toLowerCase();
-    return !s || l.profile?.email?.toLowerCase().includes(s) || l.university_name?.toLowerCase().includes(s);
+    return !s || l.profile?.email?.toLowerCase().includes(s) || l.university_name?.toLowerCase().includes(s) || l.profile?.full_name?.toLowerCase().includes(s);
   });
 
   return (
     <AdminLayout>
       <div className="space-y-5">
-        <h2 className="text-xl font-bold">Lettres générées</h2>
-        <Input placeholder="Rechercher par email ou université..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
+        <h2 className="text-xl font-bold">Recours générés ({filtered.length})</h2>
+        <Input placeholder="Rechercher par nom, email ou université..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
         <Card>
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Nom</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Université</TableHead>
                 <TableHead>Programme</TableHead>
@@ -44,13 +45,14 @@ export default function AdminGeneratedLetters() {
             <TableBody>
               {filtered.map((l: any) => (
                 <TableRow key={l.id}>
+                  <TableCell className="text-xs font-medium">{l.profile?.full_name ?? "—"}</TableCell>
                   <TableCell className="text-xs">{l.profile?.email ?? "—"}</TableCell>
                   <TableCell className="text-xs">{l.university_name}</TableCell>
                   <TableCell className="text-xs">{l.program_name}</TableCell>
                   <TableCell className="text-xs">{new Date(l.created_at).toLocaleDateString("fr-FR")}</TableCell>
                 </TableRow>
               ))}
-              {filtered.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">Aucune lettre</TableCell></TableRow>}
+              {filtered.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">Aucun recours</TableCell></TableRow>}
             </TableBody>
           </Table>
         </Card>

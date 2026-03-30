@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, FileText, Sparkles, ArrowRight, CreditCard } from "lucide-react";
+import { Shield, FileText, Sparkles, ArrowRight, Smartphone, CheckCircle, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Disclaimer } from "@/components/Disclaimer";
+import { WhatsAppCTA } from "@/components/WhatsAppCTA";
 
 const Index = () => {
   const { user } = useAuth();
@@ -16,21 +17,20 @@ const Index = () => {
         <div className="container relative py-16 md:py-24">
           <div className="mx-auto max-w-2xl text-center space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-accent-foreground">
-              <Sparkles className="h-4 w-4" />
-              Service Premium
+              <Zap className="h-4 w-4" />
+              100% Gratuit
             </div>
             <h1 className="text-3xl md:text-5xl font-extrabold leading-tight">
-              Ton <span className="text-gradient-premium">recours gracieux</span>,
-              <br />rédigé avec soin
+              Refus université Campus France ?{" "}
+              <span className="text-gradient-premium">Rédige gratuitement ton recours gracieux</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              KPB Recours Premium génère jusqu'à 3 lettres de recours personnalisées 
-              pour tes candidatures refusées sur Études en France.
+              Crée un modèle de recours gracieux propre, crédible et structuré à partir de ton dossier, puis découvre aussi comment sécuriser une admission en France via les écoles privées.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
               {user ? (
                 <Button asChild size="lg" className="gradient-premium text-primary-foreground shadow-premium">
-                  <Link to="/premium/dashboard">
+                  <Link to="/dashboard">
                     Accéder à mon espace
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
@@ -38,9 +38,9 @@ const Index = () => {
               ) : (
                 <>
                   <Button asChild size="lg" className="gradient-premium text-primary-foreground shadow-premium">
-                    <Link to="/payer">
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Obtenir l'accès — 5 000 FCFA
+                    <Link to="/inscription">
+                      Commencer gratuitement
+                      <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
                   <Button asChild variant="outline" size="lg">
@@ -49,9 +49,6 @@ const Index = () => {
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button asChild variant="ghost" size="lg">
-                    <Link to="/activation">J'ai un code d'activation</Link>
-                  </Button>
                 </>
               )}
             </div>
@@ -59,13 +56,30 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Trust blocks */}
+      <section className="container py-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { icon: CheckCircle, label: "Gratuit" },
+            { icon: Zap, label: "Rapide" },
+            { icon: Shield, label: "Pensé pour les étudiants francophones" },
+            { icon: Smartphone, label: "Compatible mobile" },
+          ].map(({ icon: Icon, label }) => (
+            <div key={label} className="flex items-center gap-2 rounded-lg bg-accent/50 px-3 py-3 text-sm">
+              <Icon className="h-4 w-4 text-primary shrink-0" />
+              <span className="text-foreground font-medium text-xs md:text-sm">{label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Features */}
       <section className="container py-12 md:py-16">
         <div className="grid gap-4 md:grid-cols-3">
           {[
-            { icon: FileText, title: "Jusqu'à 3 lettres", desc: "Génère des lettres personnalisées pour chaque université qui t'a refusé." },
+            { icon: FileText, title: "Lettre personnalisée", desc: "Génère une lettre de recours adaptée à ton dossier et à chaque université." },
             { icon: Shield, title: "Ton formel & respectueux", desc: "Chaque lettre respecte le ton académique attendu par les établissements français." },
-            { icon: Sparkles, title: "Personnalisé à ton dossier", desc: "Tes informations sont utilisées pour créer un argumentaire unique et pertinent." },
+            { icon: Sparkles, title: "Sans promesse trompeuse", desc: "Un outil honnête pour t'aider dans ta démarche, sans garantir de résultat." },
           ].map(({ icon: Icon, title, desc }) => (
             <Card key={title} className="border-border/50">
               <CardContent className="p-5 space-y-3">
@@ -80,10 +94,19 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Disclaimer */}
-      <section className="container pb-16">
-        <div className="max-w-2xl mx-auto">
+      {/* Disclaimer + WhatsApp */}
+      <section className="container pb-16 space-y-6">
+        <div className="max-w-2xl mx-auto space-y-6">
           <Disclaimer />
+          <Card className="border-primary/20 bg-accent/50">
+            <CardContent className="p-5 space-y-4 text-center">
+              <h3 className="font-semibold">Tu veux aussi sécuriser une admission en école privée en France ?</h3>
+              <p className="text-sm text-muted-foreground">
+                Notre équipe peut t'aider à trouver une solution concrète pour la rentrée de Septembre 2026.
+              </p>
+              <WhatsAppCTA />
+            </CardContent>
+          </Card>
         </div>
       </section>
     </div>
