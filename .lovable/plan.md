@@ -1,89 +1,154 @@
 
 
-# Plan d'amélioration — 3 axes
+# Plan : Transformation en "KPB Recours Gratuit"
 
-## 1. Email de connexion (magic link) en français
-
-Actuellement, il n'y a pas de domaine email configuré. Les emails de magic link sont envoyés par le système par défaut (en anglais).
-
-**Solution** : Configurer un domaine email via le dialogue de setup, puis créer des templates d'emails d'authentification personnalisés en français avec les instructions claires pour l'étudiant.
-
-**Étapes** :
-- Ouvrir le dialogue de configuration du domaine email (tu devras fournir un domaine, ex: `kpb-recours.com`)
-- Scaffolder les templates d'emails d'auth en français (magic link, confirmation, etc.)
-- Personnaliser le contenu : objet en français, instructions étape par étape ("Clique sur le bouton ci-dessous pour te connecter à ton espace KPB Recours Premium")
-- Appliquer le branding du projet (couleurs orange/warm, police Plus Jakarta Sans)
-- Déployer la fonction backend
-
-**Prérequis** : Tu dois avoir un nom de domaine. As-tu un domaine (ex: kpb-recours.com) ?
+Transformer l'app premium payante en un outil gratuit de génération de recours gracieux, optimisé pour la capture de leads et la conversion vers les écoles privées.
 
 ---
 
-## 2. Exemples de réponses sous chaque champ du formulaire
+## Vue d'ensemble
 
-Ajouter un texte d'aide en gris sous chaque champ de saisie dans `NouvelleLettre.tsx` pour guider les étudiants.
-
-**Fichier** : `src/pages/premium/NouvelleLettre.tsx`
-
-**Exemples prévus** :
-
-| Champ | Exemple d'aide |
-|-------|---------------|
-| Université / école | _Ex : « Université Paris-Saclay », « INSA Lyon »_ |
-| Programme / formation | _Ex : « Master 1 Informatique », « Licence 3 Économie-Gestion »_ |
-| Motif de refus | _Ex : « Capacité d'accueil atteinte », « Dossier jugé insuffisant », « Pièces manquantes »_ |
-| Contexte candidature | _Ex : « Je suis actuellement en L2 Économie au Maroc et j'ai postulé via Études en France pour une L3... »_ |
-| Projet académique | _Ex : « Je souhaite me spécialiser en finance d'entreprise et obtenir un Master en France pour travailler dans le conseil... »_ |
-| Pourquoi réexamen | _Ex : « Mon dossier ne reflétait pas mes dernières notes du semestre, qui montrent une nette progression... »_ |
-| Nouveaux éléments | _Ex : « J'ai obtenu une certification B2 en français depuis ma candidature », « Mon relevé de notes du S2 n'était pas inclus »_ |
-| Notes supplémentaires | _Ex : « J'ai une lettre de recommandation de mon professeur principal »_ |
-
-Implémentation : ajouter un `<p className="text-xs text-muted-foreground">` sous chaque `Input` / `Textarea`.
+```text
+AVANT (premium payant)          APRÈS (gratuit + lead gen)
+─────────────────────           ──────────────────────────
+/ (landing premium)       →     / (landing gratuit, forte CTA)
+/connexion                →     /connexion (magic link, simplifié)
+/activation               →     SUPPRIMÉ (redirect → /)
+/payer                    →     SUPPRIMÉ (redirect → /)
+/access-check             →     SUPPRIMÉ (redirect → /dashboard)
+/payments/*               →     SUPPRIMÉ (redirect → /)
+/premium/dashboard        →     /dashboard
+/premium/nouvelle-lettre  →     /recours/nouveau
+/premium/historique       →     /recours/historique
+/premium/mon-acces        →     /mon-profil (édition profil)
+/admin/premium-access     →     /admin/leads
+/admin/orders             →     /admin/recours
+/admin/generated-letters  →     /admin/analytics
+```
 
 ---
 
-## 3. Intégration Money Fusion pour le paiement
+## 1. Base de données
 
-D'après l'image partagée, Money Fusion propose une API de paiement avec : type d'application, nom, description, logo, URL du site, URL de redirection après paiement, et adresses IP autorisées.
+**Migration SQL** — adapter les tables existantes sans casser la compatibilité :
 
-**Plan d'intégration** :
+- Ajouter colonnes au profil : `current_academic_level`, `target_level_in_france`, `field_of_study` (si pas déjà dans `profiles`)
+- Rendre `premium_access_id` nullable dans `generated_letters` (les recours gratuits n'ont plus d'accès premium)
+- Garder toutes les tables existantes intactes pour la rétrocompatibilité
+- Ajouter une politique RLS INSERT sur `generated_letters` pour les utilisateurs authentifiés sans vérification premium
+- Pas de nouvelle table nécessaire — réutiliser `profiles`, `generated_letters`, `events`
 
-1. **Créer une Edge Function `initiate-payment`** qui :
-   - Reçoit l'email de l'étudiant et le montant
-   - Crée une commande dans la table `orders` (status: pending)
-   - Appelle l'API Money Fusion pour initier le paiement
-   - Retourne l'URL de paiement Money Fusion vers laquelle rediriger l'étudiant
+---
 
-2. **Créer une Edge Function `moneyfusion-webhook`** qui :
-   - Reçoit le callback de Money Fusion après paiement réussi
-   - Met à jour la commande (status: paid)
-   - Crée ou trouve le compte utilisateur
-   - Génère un code d'activation et l'active automatiquement (premium_access)
-   - Envoie un magic link à l'email de l'étudiant
+## 2. Edge Function `generate-letter` (refactoring)
 
-3. **Mettre à jour `PaymentReturn.tsx`** pour :
-   - Vérifier le statut du paiement via la référence
-   - Si payé : afficher un message de succès + "Vérifie ta boîte mail pour ton lien de connexion"
-   - Si en attente : polling ou message d'attente
+Supprimer toute la logique premium/quota :
+- Supprimer la vérification `premium_access_id`, `premium_access`, et le décompte `used_letters`
+- Authentifier l'utilisateur normalement via JWT
+- Valider les inputs, générer la lettre via Lovable AI (garder Gemini 2.5 Flash)
+- Sauvegarder dans `generated_letters` avec `premium_access_id = NULL`
+- **Ajouter l'appel webhook n8n** après génération réussie : POST vers `N8N_WEBHOOK_URL` (secret Supabase) avec toutes les données lead + lettre
+- Tracker l'événement `recours_generated`
 
-4. **Ajouter un bouton/page de paiement** sur la landing page ou une page dédiée `/payer`
+---
 
-**Prérequis** : Tu devras configurer tes clés API Money Fusion. As-tu déjà créé ton application sur le dashboard Money Fusion et obtenu tes clés API (clé publique + clé secrète) ?
+## 3. Nouvelle Edge Function `n8n-webhook`
+
+Fonction utilitaire appelée côté serveur pour poster les données lead vers n8n :
+- Événements : `signup_completed`, `profile_completed`, `recours_generated`, `whatsapp_clicked`
+- Payload : user_id, full_name, email, whatsapp_number, country, nationality, academic info, university, program, lettre générée, event_type, created_at
+- Secret configurable : `N8N_WEBHOOK_URL`
+- Fail silently (log error mais ne bloque pas le flux utilisateur)
+
+---
+
+## 4. Frontend — Fichiers à créer/refactorer
+
+### Pages à créer :
+- **`src/pages/Index.tsx`** — Landing page gratuite. Headline : "Refus université Campus France ? Rédige gratuitement ton recours gracieux". Trust blocks, CTA "Commencer gratuitement", WhatsApp CTA
+- **`src/pages/Inscription.tsx`** — Formulaire inscription : full_name, email, whatsapp_number, country, nationality. Création compte + profil
+- **`src/pages/Dashboard.tsx`** — Dashboard utilisateur : bienvenue, complétion profil, bouton nouveau recours, historique récent, WhatsApp CTA, bloc école privée
+- **`src/pages/MonProfil.tsx`** — Édition profil complet (full_name, email, whatsapp, country, nationality, academic_level, target_level, field_of_study)
+- **`src/pages/recours/NouveauRecours.tsx`** — Formulaire multi-step (repris de NouvelleLettre mais sans quota/premium). Ajouter champ `refusal_date`
+- **`src/pages/recours/Historique.tsx`** — Historique des recours (repris, sans PremiumLayout)
+- **`src/pages/admin/Leads.tsx`** — Liste leads (profiles) avec recherche, export CSV
+- **`src/pages/admin/Recours.tsx`** — Liste recours générés avec recherche, détail
+- **`src/pages/admin/Analytics.tsx`** — Stats basiques : signups, recours, clics WhatsApp
+
+### Pages à supprimer/rediriger :
+- `Activation.tsx`, `Payer.tsx`, `AccessCheck.tsx`, `PaymentReturn.tsx`, `PaymentCancel.tsx`, `PaymentSuccess.tsx` → redirect vers `/`
+
+### Composants à refactorer :
+- **`PremiumLayout.tsx`** → `AppLayout.tsx` : remplacer "KPB Recours Premium" par "KPB Recours Gratuit"
+- **`MobileNav.tsx`** — Nouvelles routes : `/dashboard`, `/recours/nouveau`, `/recours/historique`, `/mon-profil`
+- **`PremiumRoute.tsx`** → `AuthRoute.tsx` : juste vérifier l'auth, plus de vérification premium
+- **`AdminLayout.tsx`** — Mettre à jour nav : Leads, Recours, Analytics
+- **`UpsellBlock.tsx`** — Garder et renforcer : CTA WhatsApp école privée avec le lien fourni
+- **`WhatsAppCTA.tsx`** (nouveau) — Composant réutilisable pour le bouton WhatsApp avec le deep link configurable
+
+### Fichiers/hooks à supprimer :
+- `usePremiumAccess.ts` — plus nécessaire
+- `PremiumRoute.tsx` — remplacé par `AuthRoute.tsx`
+
+---
+
+## 5. Routing (`App.tsx`)
+
+```text
+PUBLIC:  /, /connexion, /inscription
+AUTH:    /dashboard, /recours/nouveau, /recours/historique, /mon-profil
+ADMIN:  /admin/leads, /admin/recours, /admin/analytics
+LEGACY: /premium/*, /activation, /payer, /payments/*, /access-check → redirect
+```
+
+---
+
+## 6. Connexion (`Connexion.tsx`)
+
+- Supprimer le lien "J'ai un code d'activation"
+- Changer le titre : "KPB Recours Gratuit"
+- Redirect après magic link → `/dashboard`
+- Ajouter lien vers `/inscription`
+
+---
+
+## 7. WhatsApp CTA
+
+Lien configurable via constante :
+```
+https://wa.me/VOTRE_NUMERO_FRANCE?text=Bonjour%20KPB%20Education...
+```
+
+Affiché :
+- Après génération de lettre (bloc fort)
+- Sur le dashboard
+- Dans le composant UpsellBlock renforcé
+
+---
+
+## 8. Résultat après génération
+
+Après chaque lettre :
+1. Lettre affichée
+2. Boutons : Copier, Télécharger, Enregistrer
+3. Disclaimers
+4. **Bloc conversion école privée** (headline + texte + bouton WhatsApp vert)
+5. Tracking événements : `recours_generated`, `recours_copied`, `recours_downloaded`, `whatsapp_private_school_clicked`
+
+---
+
+## 9. Secret à configurer
+
+- `N8N_WEBHOOK_URL` — URL du webhook n8n (à fournir par l'utilisateur)
 
 ---
 
 ## Résumé des fichiers impactés
 
-- `src/pages/premium/NouvelleLettre.tsx` — exemples sous chaque champ
-- `supabase/functions/initiate-payment/index.ts` — nouvelle fonction
-- `supabase/functions/moneyfusion-webhook/index.ts` — nouvelle fonction
-- `src/pages/PaymentReturn.tsx` — amélioration du flux post-paiement
-- Templates email d'auth (si domaine configuré)
-
-## Questions à clarifier avant de commencer
-
-Avant d'implémenter, j'ai besoin de savoir :
-1. **As-tu un nom de domaine** pour les emails personnalisés ? (sinon on peut commencer par les points 2 et 3)
-2. **As-tu tes clés API Money Fusion** (ou tu es encore en train de configurer l'application sur leur dashboard) ?
-3. **Quel est le prix du service premium** à facturer ?
+| Action | Fichiers |
+|--------|----------|
+| Créer | `src/pages/Inscription.tsx`, `src/pages/Dashboard.tsx`, `src/pages/MonProfil.tsx`, `src/pages/recours/NouveauRecours.tsx`, `src/pages/recours/Historique.tsx`, `src/pages/admin/Leads.tsx`, `src/pages/admin/Recours.tsx`, `src/pages/admin/Analytics.tsx`, `src/components/AppLayout.tsx`, `src/components/AuthRoute.tsx`, `src/components/WhatsAppCTA.tsx`, `supabase/functions/n8n-webhook/index.ts` |
+| Refactorer | `src/App.tsx`, `src/pages/Index.tsx`, `src/pages/Connexion.tsx`, `src/components/MobileNav.tsx`, `src/components/AdminLayout.tsx`, `src/components/UpsellBlock.tsx`, `supabase/functions/generate-letter/index.ts` |
+| Supprimer/Redirect | `src/pages/Activation.tsx`, `src/pages/Payer.tsx`, `src/pages/AccessCheck.tsx`, `src/pages/PaymentReturn.tsx`, `src/pages/PaymentCancel.tsx`, `src/pages/PaymentSuccess.tsx`, `src/hooks/usePremiumAccess.ts`, `src/components/PremiumRoute.tsx`, `src/components/PremiumLayout.tsx` |
+| Migration DB | 1 migration (colonnes profil + nullable premium_access_id) |
 
