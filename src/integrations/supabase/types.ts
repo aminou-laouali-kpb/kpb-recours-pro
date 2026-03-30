@@ -243,7 +243,7 @@ export type Database = {
           id: string
           input_payload: Json
           letter_text: string
-          premium_access_id: string
+          premium_access_id: string | null
           program_name: string
           university_name: string
           user_id: string
@@ -253,7 +253,7 @@ export type Database = {
           id?: string
           input_payload?: Json
           letter_text: string
-          premium_access_id: string
+          premium_access_id?: string | null
           program_name: string
           university_name: string
           user_id: string
@@ -263,7 +263,7 @@ export type Database = {
           id?: string
           input_payload?: Json
           letter_text?: string
-          premium_access_id?: string
+          premium_access_id?: string | null
           program_name?: string
           university_name?: string
           user_id?: string
@@ -383,10 +383,13 @@ export type Database = {
         Row: {
           country: string | null
           created_at: string
+          current_academic_level: string | null
           email: string | null
+          field_of_study: string | null
           full_name: string | null
           id: string
           nationality: string | null
+          target_level_in_france: string | null
           updated_at: string
           user_id: string
           whatsapp_number: string | null
@@ -394,10 +397,13 @@ export type Database = {
         Insert: {
           country?: string | null
           created_at?: string
+          current_academic_level?: string | null
           email?: string | null
+          field_of_study?: string | null
           full_name?: string | null
           id?: string
           nationality?: string | null
+          target_level_in_france?: string | null
           updated_at?: string
           user_id: string
           whatsapp_number?: string | null
@@ -405,10 +411,13 @@ export type Database = {
         Update: {
           country?: string | null
           created_at?: string
+          current_academic_level?: string | null
           email?: string | null
+          field_of_study?: string | null
           full_name?: string | null
           id?: string
           nationality?: string | null
+          target_level_in_france?: string | null
           updated_at?: string
           user_id?: string
           whatsapp_number?: string | null
