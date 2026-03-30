@@ -10,7 +10,6 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // Verify user auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Non authentifié" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -28,25 +27,20 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { premium_access_id, university_name, program_name, refusal_reason, context, academic_project, why_reconsider, new_elements, supporting_notes, tone } = body;
+    const { university_name, program_name, refusal_reason, context, academic_project, why_reconsider, new_elements, supporting_notes, tone, refusal_date } = body;
 
-    if (!premium_access_id || !university_name || !program_name) {
+    if (!university_name || !program_name) {
       return new Response(JSON.stringify({ error: "Champs requis manquants" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Input validation - length limits to prevent abuse
+    // Input validation
     const maxLen = 1000;
     const shortMax = 200;
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-    if (!uuidRegex.test(premium_access_id)) {
-      return new Response(JSON.stringify({ error: "ID d'accès invalide" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
     if (typeof university_name !== "string" || university_name.length > shortMax ||
         typeof program_name !== "string" || program_name.length > shortMax) {
       return new Response(JSON.stringify({ error: "Nom trop long (max 200 caractères)" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const optionalFields = { refusal_reason, context, academic_project, why_reconsider, new_elements, supporting_notes };
+    const optionalFields = { refusal_reason, context, academic_project, why_reconsider, new_elements, supporting_notes, refusal_date };
     for (const [key, val] of Object.entries(optionalFields)) {
       if (val !== undefined && val !== null && (typeof val !== "string" || val.length > maxLen)) {
         return new Response(JSON.stringify({ error: `Champ ${key} trop long (max 1000 caractères)` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -61,23 +55,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
-
-    // Check premium access and quota
-    const { data: access } = await supabaseAdmin
-      .from("premium_access")
-      .select("*")
-      .eq("id", premium_access_id)
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .single();
-
-    if (!access) {
-      return new Response(JSON.stringify({ error: "Accès premium non trouvé" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    if (access.used_letters >= access.max_letters) {
-      return new Response(JSON.stringify({ error: "Quota de lettres épuisé" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
 
     // Generate the letter using Lovable AI
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -109,10 +86,11 @@ Règles impératives :
 
 Université / École : ${university_name}
 Programme : ${program_name}
+${refusal_date ? `Date du refus : ${refusal_date}` : ""}
 ${refusal_reason ? `Motif de refus : ${refusal_reason}` : ""}
 ${context ? `Contexte : ${context}` : ""}
 ${academic_project ? `Projet académique : ${academic_project}` : ""}
-Raison de la demande de réexamen : ${why_reconsider}
+Raison de la demande de réexamen : ${why_reconsider || "Non précisé"}
 ${new_elements ? `Nouveaux éléments : ${new_elements}` : ""}
 ${supporting_notes ? `Notes complémentaires : ${supporting_notes}` : ""}`;
 
@@ -149,10 +127,10 @@ ${supporting_notes ? `Notes complémentaires : ${supporting_notes}` : ""}`;
       return new Response(JSON.stringify({ error: "Aucune lettre générée" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Save the letter
+    // Save the letter (premium_access_id is now nullable)
     const { error: insertError } = await supabaseAdmin.from("generated_letters").insert({
       user_id: user.id,
-      premium_access_id,
+      premium_access_id: null,
       university_name,
       program_name,
       input_payload: body,
@@ -164,18 +142,45 @@ ${supporting_notes ? `Notes complémentaires : ${supporting_notes}` : ""}`;
       return new Response(JSON.stringify({ error: "Erreur de sauvegarde" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Increment used_letters
-    await supabaseAdmin
-      .from("premium_access")
-      .update({ used_letters: access.used_letters + 1 })
-      .eq("id", premium_access_id);
-
     // Track event
     await supabaseAdmin.from("events").insert({
       user_id: user.id,
-      event_name: "letter_generated",
-      metadata: { university_name, program_name, premium_access_id },
+      event_name: "recours_generated",
+      metadata: { university_name, program_name },
     });
+
+    // Send webhook to n8n (fire and forget)
+    const N8N_WEBHOOK_URL = Deno.env.get("N8N_WEBHOOK_URL");
+    if (N8N_WEBHOOK_URL) {
+      // Fetch user profile for lead data
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      fetch(N8N_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event_type: "recours_generated",
+          user_id: user.id,
+          full_name: profile?.full_name,
+          email: profile?.email || user.email,
+          whatsapp_number: profile?.whatsapp_number,
+          country: profile?.country,
+          nationality: profile?.nationality,
+          current_academic_level: profile?.current_academic_level,
+          target_level_in_france: profile?.target_level_in_france,
+          field_of_study: profile?.field_of_study,
+          university_name,
+          program_name,
+          refusal_reason,
+          generated_letter_text: letterText,
+          created_at: new Date().toISOString(),
+        }),
+      }).catch((err) => console.error("n8n webhook error:", err));
+    }
 
     return new Response(JSON.stringify({ letter_text: letterText }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {

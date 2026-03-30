@@ -1,12 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-import { Shield, CreditCard, FileText, LogOut, LayoutDashboard } from "lucide-react";
+import { Users, FileText, BarChart3, LogOut, LayoutDashboard } from "lucide-react";
 
 const adminNav = [
-  { to: "/admin/premium-access", icon: Shield, label: "Accès premium" },
-  { to: "/admin/orders", icon: CreditCard, label: "Commandes" },
-  { to: "/admin/generated-letters", icon: FileText, label: "Lettres" },
+  { to: "/admin/leads", icon: Users, label: "Leads" },
+  { to: "/admin/recours", icon: FileText, label: "Recours" },
+  { to: "/admin/analytics", icon: BarChart3, label: "Analytics" },
 ];
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -37,8 +37,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             </nav>
           </div>
           <div className="flex items-center gap-2">
-            <Link to="/premium/dashboard" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-              <LayoutDashboard className="h-3 w-3" /> Premium
+            <Link to="/dashboard" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+              <LayoutDashboard className="h-3 w-3" /> App
             </Link>
             <button onClick={signOut} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
               <LogOut className="h-3 w-3" /> Déconnexion
@@ -46,7 +46,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      {/* Mobile nav */}
       <div className="md:hidden border-b border-border bg-card">
         <div className="container flex gap-1 py-2 overflow-x-auto">
           {adminNav.map(({ to, icon: Icon, label }) => (

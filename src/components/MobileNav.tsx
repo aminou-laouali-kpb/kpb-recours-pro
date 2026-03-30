@@ -4,10 +4,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { to: "/premium/dashboard", icon: LayoutDashboard, label: "Accueil" },
-  { to: "/premium/nouvelle-lettre", icon: PenLine, label: "Nouvelle" },
-  { to: "/premium/historique", icon: History, label: "Historique" },
-  { to: "/premium/mon-acces", icon: User, label: "Mon accès" },
+  { to: "/dashboard", icon: LayoutDashboard, label: "Accueil" },
+  { to: "/recours/nouveau", icon: PenLine, label: "Nouveau" },
+  { to: "/recours/historique", icon: History, label: "Historique" },
+  { to: "/mon-profil", icon: User, label: "Profil" },
 ];
 
 export function MobileNav() {

@@ -21,7 +21,7 @@ export default function Connexion() {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
-        options: { emailRedirectTo: window.location.origin + "/premium/dashboard" },
+        options: { emailRedirectTo: window.location.origin + "/dashboard" },
       });
       if (error) {
         toast({ title: "Erreur", description: error.message, variant: "destructive" });
@@ -33,7 +33,7 @@ export default function Connexion() {
       toast({
         title: isNetwork ? "Erreur réseau" : "Erreur",
         description: isNetwork
-          ? "Impossible de contacter le serveur. Essaie depuis l'URL publiée de l'application ou vérifie ta connexion internet."
+          ? "Impossible de contacter le serveur. Vérifie ta connexion internet."
           : (err?.message || "Une erreur inattendue est survenue"),
         variant: "destructive",
       });
@@ -47,9 +47,9 @@ export default function Connexion() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">
-            <span className="text-gradient-premium">KPB</span> Recours Premium
+            <span className="text-gradient-premium">KPB</span> Recours Gratuit
           </CardTitle>
-          <CardDescription>Connecte-toi avec ton email pour accéder à ton espace premium</CardDescription>
+          <CardDescription>Connecte-toi avec ton email pour accéder à ton espace</CardDescription>
         </CardHeader>
         <CardContent>
           {sent ? (
@@ -61,30 +61,21 @@ export default function Connexion() {
               <p className="text-sm text-muted-foreground">
                 Un lien de connexion a été envoyé à <strong>{email}</strong>. Clique dessus pour accéder à ton espace.
               </p>
-              <Button variant="ghost" onClick={() => setSent(false)}>
-                Renvoyer le lien
-              </Button>
+              <Button variant="ghost" onClick={() => setSent(false)}>Renvoyer le lien</Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Adresse email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="ton.email@exemple.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+                <Input id="email" type="email" placeholder="ton.email@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
               <Button type="submit" className="w-full gradient-premium text-primary-foreground" disabled={loading}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Recevoir le lien de connexion
               </Button>
               <div className="text-center">
-                <Link to="/activation" className="text-sm text-primary hover:underline">
-                  J'ai un code d'activation
+                <Link to="/inscription" className="text-sm text-primary hover:underline">
+                  Créer un compte
                 </Link>
               </div>
             </form>
