@@ -3,7 +3,12 @@ import { MessageCircle } from "lucide-react";
 import { WHATSAPP_CTA_URL } from "@/lib/constants";
 import { useTrackEvent } from "@/hooks/useTrackEvent";
 
-export function WhatsAppCTA({ className = "" }: { className?: string }) {
+interface WhatsAppCTAProps {
+  className?: string;
+  prominent?: boolean;
+}
+
+export function WhatsAppCTA({ className = "", prominent = false }: WhatsAppCTAProps) {
   const trackEvent = useTrackEvent();
 
   const handleClick = () => {
@@ -12,12 +17,19 @@ export function WhatsAppCTA({ className = "" }: { className?: string }) {
   };
 
   return (
-    <Button
-      onClick={handleClick}
-      className={`bg-[#25D366] hover:bg-[#1da851] text-white w-full h-12 text-base font-semibold ${className}`}
-    >
-      <MessageCircle className="mr-2 h-5 w-5" />
-      Contacter notre équipe sur WhatsApp
-    </Button>
+    <div className={`space-y-1.5 ${className}`}>
+      <Button
+        onClick={handleClick}
+        className={`bg-[#25D366] hover:bg-[#1da851] text-white w-full font-semibold shadow-md ${
+          prominent ? "h-14 text-base animate-pulse-subtle" : "h-12 text-base"
+        }`}
+      >
+        <MessageCircle className={`mr-2 ${prominent ? "h-6 w-6" : "h-5 w-5"}`} />
+        Contacter notre équipe sur WhatsApp
+      </Button>
+      {prominent && (
+        <p className="text-xs text-center text-muted-foreground">📱 Réponse rapide garantie</p>
+      )}
+    </div>
   );
 }
