@@ -123,4 +123,15 @@
   .shadow-premium {
     box-shadow: 0 10px 40px -10px hsl(24 80% 50% / 0.25);
   }
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+.animate-pulse-subtle {
+  animation: pulse-subtle 2.5s ease-in-out infinite;
 }
