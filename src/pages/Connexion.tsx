@@ -10,18 +10,19 @@ import { ArrowLeft, Loader2, Info } from "lucide-react";
 
 export default function Connexion() {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    if (!email.trim() || !password) return;
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
-        options: { emailRedirectTo: window.location.origin + "/dashboard" },
+        password,
       });
       if (error) {
         toast({ title: "Erreur", description: error.message, variant: "destructive" });
@@ -50,13 +51,17 @@ export default function Connexion() {
           <CardTitle className="text-2xl">
             <span className="text-gradient-premium">KPB</span> Recours Gratuit
           </CardTitle>
-          <CardDescription>Connecte-toi avec ton email pour accéder à ton espace</CardDescription>
+          <CardDescription>Connecte-toi pour accéder à ton espace</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Adresse email</Label>
               <Input id="email" type="email" placeholder="ton.email@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Mot de passe</Label>
+              <Input id="password" type="password" placeholder="Ton mot de passe" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
 
             {/* Reassurance message */}

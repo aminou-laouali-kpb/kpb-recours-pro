@@ -17,7 +17,7 @@ const COUNTRIES = [
 ];
 
 export default function Inscription() {
-  const [form, setForm] = useState({ full_name: "", email: "", whatsapp_number: "", country: "", nationality: "" });
+  const [form, setForm] = useState({ full_name: "", email: "", password: "", whatsapp_number: "", country: "", nationality: "" });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -26,14 +26,18 @@ export default function Inscription() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.email.trim() || !form.full_name.trim()) return;
+    if (!form.email.trim() || !form.full_name.trim() || !form.password) return;
+    if (form.password.length < 6) {
+      toast({ title: "Erreur", description: "Le mot de passe doit contenir au moins 6 caractères.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.signUp({
         email: form.email.trim(),
+        password: form.password,
         options: {
-          emailRedirectTo: window.location.origin + "/dashboard",
           data: {
             full_name: form.full_name.trim(),
             whatsapp_number: form.whatsapp_number.trim(),
@@ -73,6 +77,10 @@ export default function Inscription() {
             <div className="space-y-2">
               <Label htmlFor="email">Adresse email *</Label>
               <Input id="email" type="email" placeholder="ton.email@exemple.com" value={form.email} onChange={(e) => updateField("email", e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Mot de passe *</Label>
+              <Input id="password" type="password" placeholder="Minimum 6 caractères" value={form.password} onChange={(e) => updateField("password", e.target.value)} required minLength={6} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="whatsapp">Numéro WhatsApp</Label>
