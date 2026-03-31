@@ -11,11 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Loader2, ArrowRight, ArrowLeft, Copy, Download, CheckCircle, Heart, Shield } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, Copy, Download, CheckCircle, Heart, Shield, Sparkles } from "lucide-react";
 import { useTrackEvent } from "@/hooks/useTrackEvent";
 import { UpsellBlock } from "@/components/UpsellBlock";
 import { Disclaimer } from "@/components/Disclaimer";
-import { WhatsAppCTA } from "@/components/WhatsAppCTA";
 
 interface FormData {
   university_name: string;
@@ -99,21 +98,25 @@ export default function NouveauRecours() {
         <div className="space-y-5 max-w-2xl mx-auto">
           {/* Emotional success */}
           <Card className="border-primary/20 bg-accent/50">
-            <CardContent className="p-4 flex items-start gap-3">
-              <Heart className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <CardContent className="p-5 flex items-start gap-3">
+              <Sparkles className="h-6 w-6 text-primary shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-semibold text-foreground">Bravo, tu as fait un pas important 💪</p>
-                <p className="text-xs text-muted-foreground mt-1">Ta lettre de recours est prête. Relis-la, adapte-la si nécessaire, puis envoie-la à l'université.</p>
+                <p className="text-base font-bold text-foreground">Ta lettre est prête ! 🎉</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Tu viens de faire un pas courageux pour défendre ton projet d'études en France. Relis ta lettre, adapte-la si nécessaire, puis envoie-la à l'université.
+                </p>
               </div>
             </CardContent>
           </Card>
 
+          {/* The letter */}
           <Card>
             <CardContent className="p-5">
               <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans">{generatedLetter}</pre>
             </CardContent>
           </Card>
 
+          {/* Action buttons */}
           <div className="flex gap-3">
             <Button onClick={handleCopy} variant="outline" className="flex-1">
               {copied ? <CheckCircle className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
@@ -125,10 +128,20 @@ export default function NouveauRecours() {
             </Button>
           </div>
 
+          {/* Short disclaimer */}
           <Disclaimer />
 
-          {/* Strong upsell */}
-          <UpsellBlock />
+          {/* ===== CONVERSION BLOCK — Plan B ===== */}
+          <div className="space-y-3 pt-2">
+            <div className="text-center space-y-1">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Et maintenant ?</p>
+              <h3 className="text-lg font-bold text-foreground">Sécurise aussi un plan B pour étudier en France</h3>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Le recours peut prendre du temps. Pendant ce temps, ne reste pas sans solution. Des centaines d'étudiants obtiennent leur visa chaque année grâce aux écoles privées.
+              </p>
+            </div>
+            <UpsellBlock />
+          </div>
 
           <Button variant="ghost" onClick={() => navigate("/dashboard")} className="w-full">
             ← Retour au tableau de bord

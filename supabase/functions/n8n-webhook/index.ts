@@ -6,36 +6,32 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// TODO(n8n): Configure N8N_WEBHOOK_URL as a Supabase secret
-// Run: supabase secrets set N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook/xxx
+// n8n webhook URLs — production + test
+const N8N_URLS = [
+  "https://n8n.kpbeducation.cloud/webhook/a13f20d3-64d8-4f59-950e-39bee66c3edf",
+  "https://n8n.kpbeducation.cloud/webhook-test/a13f20d3-64d8-4f59-950e-39bee66c3edf",
+];
 
-/**
- * Sends payload to n8n with 1 retry on failure.
- * Never throws — fails silently to avoid blocking user flows.
- */
+/** Fire-and-forget with 1 retry per URL */
 async function sendToN8n(url: string, payload: Record<string, unknown>): Promise<void> {
-  const maxAttempts = 2;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+  for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      console.log(`[n8n] Sending event=${payload.event_type}, attempt=${attempt}`);
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(10_000), // 10s timeout
+        signal: AbortSignal.timeout(10_000),
       });
       if (res.ok) {
-        console.log(`[n8n] Success for event=${payload.event_type}`);
+        console.log(`[n8n] OK → ${url}`);
         return;
       }
-      console.error(`[n8n] HTTP ${res.status} for event=${payload.event_type}, attempt=${attempt}`);
+      console.error(`[n8n] HTTP ${res.status} → ${url}, attempt=${attempt}`);
     } catch (err) {
-      console.error(`[n8n] Error for event=${payload.event_type}, attempt=${attempt}:`, err);
+      console.error(`[n8n] Error → ${url}, attempt=${attempt}:`, err);
     }
-    // Wait 1s before retry
-    if (attempt < maxAttempts) await new Promise((r) => setTimeout(r, 1000));
+    if (attempt < 2) await new Promise((r) => setTimeout(r, 1000));
   }
-  console.error(`[n8n] All attempts failed for event=${payload.event_type} — data is saved in DB`);
 }
 
 serve(async (req) => {
@@ -68,39 +64,38 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Track event in DB (always succeeds even if n8n fails)
+    // Track event in DB
     await supabaseAdmin.from("events").insert({
       user_id: user.id,
       event_name: event_type,
       metadata: metadata ?? {},
     });
 
-    // TODO(n8n): Replace with your real n8n webhook URL
-    const N8N_WEBHOOK_URL = Deno.env.get("N8N_WEBHOOK_URL");
-    if (N8N_WEBHOOK_URL) {
-      const { data: profile } = await supabaseAdmin
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
+    // Fetch profile and send to both n8n URLs
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-      const payload = {
-        event_type,
-        user_id: user.id,
-        full_name: profile?.full_name,
-        email: profile?.email || user.email,
-        whatsapp_number: profile?.whatsapp_number,
-        country: profile?.country,
-        nationality: profile?.nationality,
-        current_academic_level: profile?.current_academic_level,
-        target_level_in_france: profile?.target_level_in_france,
-        field_of_study: profile?.field_of_study,
-        ...((metadata as Record<string, unknown>) ?? {}),
-        created_at: new Date().toISOString(),
-      };
+    const payload = {
+      event_type,
+      user_id: user.id,
+      full_name: profile?.full_name,
+      email: profile?.email || user.email,
+      whatsapp_number: profile?.whatsapp_number,
+      country: profile?.country,
+      nationality: profile?.nationality,
+      current_academic_level: profile?.current_academic_level,
+      target_level_in_france: profile?.target_level_in_france,
+      field_of_study: profile?.field_of_study,
+      ...((metadata as Record<string, unknown>) ?? {}),
+      created_at: new Date().toISOString(),
+    };
 
-      // Fire and forget — don't block response
-      sendToN8n(N8N_WEBHOOK_URL, payload);
+    // Fire and forget to both URLs
+    for (const url of N8N_URLS) {
+      sendToN8n(url, payload);
     }
 
     return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });

@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Loader2, Mail } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Loader2, Info } from "lucide-react";
 
 const COUNTRIES = [
   "Sénégal", "Côte d'Ivoire", "Cameroun", "Mali", "Guinée", "Burkina Faso",
@@ -19,8 +19,8 @@ const COUNTRIES = [
 export default function Inscription() {
   const [form, setForm] = useState({ full_name: "", email: "", whatsapp_number: "", country: "", nationality: "" });
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const updateField = (field: string, value: string) => setForm((p) => ({ ...p, [field]: value }));
 
@@ -45,7 +45,8 @@ export default function Inscription() {
       if (error) {
         toast({ title: "Erreur", description: error.message, variant: "destructive" });
       } else {
-        setSent(true);
+        toast({ title: "Compte créé !", description: "Tu es maintenant connecté." });
+        navigate("/dashboard");
       }
     } catch (err: any) {
       toast({ title: "Erreur", description: err?.message || "Erreur inattendue", variant: "destructive" });
@@ -64,60 +65,56 @@ export default function Inscription() {
           <CardDescription>Crée ton compte pour générer ton recours gratuitement</CardDescription>
         </CardHeader>
         <CardContent>
-          {sent ? (
-            <div className="text-center space-y-4 py-4">
-              <div className="mx-auto rounded-full bg-accent p-3 w-fit">
-                <Mail className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="font-semibold text-lg">Vérifie ta boîte mail</h3>
-              <p className="text-sm text-muted-foreground">
-                Un lien de connexion a été envoyé à <strong>{form.email}</strong>. Clique dessus pour accéder à ton espace.
-              </p>
-              <Button variant="ghost" onClick={() => setSent(false)}>Renvoyer le lien</Button>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="full_name">Nom complet *</Label>
+              <Input id="full_name" placeholder="Prénom Nom" value={form.full_name} onChange={(e) => updateField("full_name", e.target.value)} required />
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="full_name">Nom complet *</Label>
-                <Input id="full_name" placeholder="Prénom Nom" value={form.full_name} onChange={(e) => updateField("full_name", e.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Adresse email *</Label>
-                <Input id="email" type="email" placeholder="ton.email@exemple.com" value={form.email} onChange={(e) => updateField("email", e.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="whatsapp">Numéro WhatsApp</Label>
-                <Input id="whatsapp" type="tel" placeholder="+221 77 000 00 00" value={form.whatsapp_number} onChange={(e) => updateField("whatsapp_number", e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Pays de résidence</Label>
-                <Select value={form.country} onValueChange={(v) => updateField("country", v)}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                  <SelectContent>
-                    {COUNTRIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Nationalité</Label>
-                <Select value={form.nationality} onValueChange={(v) => updateField("nationality", v)}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                  <SelectContent>
-                    {COUNTRIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" className="w-full gradient-premium text-primary-foreground" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Créer mon compte
-              </Button>
-              <div className="text-center">
-                <Link to="/connexion" className="text-sm text-primary hover:underline">
-                  J'ai déjà un compte
-                </Link>
-              </div>
-            </form>
-          )}
+            <div className="space-y-2">
+              <Label htmlFor="email">Adresse email *</Label>
+              <Input id="email" type="email" placeholder="ton.email@exemple.com" value={form.email} onChange={(e) => updateField("email", e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp">Numéro WhatsApp</Label>
+              <Input id="whatsapp" type="tel" placeholder="+221 77 000 00 00" value={form.whatsapp_number} onChange={(e) => updateField("whatsapp_number", e.target.value)} />
+            </div>
+
+            {/* Reassurance message */}
+            <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5">
+              <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-700">
+                Assure-toi que ton email et ton numéro WhatsApp soient corrects. Tu recevras ta lettre de recours gratuite par ces moyens.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Pays de résidence</Label>
+              <Select value={form.country} onValueChange={(v) => updateField("country", v)}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                <SelectContent>
+                  {COUNTRIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Nationalité</Label>
+              <Select value={form.nationality} onValueChange={(v) => updateField("nationality", v)}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                <SelectContent>
+                  {COUNTRIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" className="w-full gradient-premium text-primary-foreground" disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Créer mon compte
+            </Button>
+            <div className="text-center">
+              <Link to="/connexion" className="text-sm text-primary hover:underline">
+                J'ai déjà un compte
+              </Link>
+            </div>
+          </form>
           <div className="mt-4 text-center">
             <Link to="/" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
               <ArrowLeft className="h-3 w-3" /> Retour à l'accueil

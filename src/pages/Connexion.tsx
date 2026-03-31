@@ -5,14 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
-import { Mail, ArrowLeft, Loader2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Loader2, Info } from "lucide-react";
 
 export default function Connexion() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +26,8 @@ export default function Connexion() {
       if (error) {
         toast({ title: "Erreur", description: error.message, variant: "destructive" });
       } else {
-        setSent(true);
+        toast({ title: "Connecté !", description: "Bienvenue sur ton espace." });
+        navigate("/dashboard");
       }
     } catch (err: any) {
       const isNetwork = err?.message?.includes("Failed to fetch") || err?.name === "TypeError";
@@ -52,34 +53,30 @@ export default function Connexion() {
           <CardDescription>Connecte-toi avec ton email pour accéder à ton espace</CardDescription>
         </CardHeader>
         <CardContent>
-          {sent ? (
-            <div className="text-center space-y-4 py-4">
-              <div className="mx-auto rounded-full bg-accent p-3 w-fit">
-                <Mail className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="font-semibold text-lg">Vérifie ta boîte mail</h3>
-              <p className="text-sm text-muted-foreground">
-                Un lien de connexion a été envoyé à <strong>{email}</strong>. Clique dessus pour accéder à ton espace.
-              </p>
-              <Button variant="ghost" onClick={() => setSent(false)}>Renvoyer le lien</Button>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Adresse email</Label>
+              <Input id="email" type="email" placeholder="ton.email@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Adresse email</Label>
-                <Input id="email" type="email" placeholder="ton.email@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              </div>
-              <Button type="submit" className="w-full gradient-premium text-primary-foreground" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Recevoir le lien de connexion
-              </Button>
-              <div className="text-center">
-                <Link to="/inscription" className="text-sm text-primary hover:underline">
-                  Créer un compte
-                </Link>
-              </div>
-            </form>
-          )}
+
+            {/* Reassurance message */}
+            <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5">
+              <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-700">
+                Assure-toi que ton email soit correct. Tu recevras ta lettre de recours gratuite par ce moyen.
+              </p>
+            </div>
+
+            <Button type="submit" className="w-full gradient-premium text-primary-foreground" disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Me connecter
+            </Button>
+            <div className="text-center">
+              <Link to="/inscription" className="text-sm text-primary hover:underline">
+                Créer un compte
+              </Link>
+            </div>
+          </form>
           <div className="mt-4 text-center">
             <Link to="/" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
               <ArrowLeft className="h-3 w-3" /> Retour à l'accueil

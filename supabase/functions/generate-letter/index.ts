@@ -6,6 +6,27 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// n8n webhook URLs — production + test
+const N8N_URLS = [
+  "https://n8n.kpbeducation.cloud/webhook/a13f20d3-64d8-4f59-950e-39bee66c3edf",
+  "https://n8n.kpbeducation.cloud/webhook-test/a13f20d3-64d8-4f59-950e-39bee66c3edf",
+];
+
+/** Fire-and-forget send to n8n — never blocks the response */
+function fireWebhooks(payload: Record<string, unknown>): void {
+  for (const url of N8N_URLS) {
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(10_000),
+    }).then((res) => {
+      if (!res.ok) console.error(`[n8n] HTTP ${res.status} for ${url}`);
+      else console.log(`[n8n] OK → ${url}`);
+    }).catch((err) => console.error(`[n8n] Error → ${url}:`, err));
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -127,7 +148,7 @@ ${supporting_notes ? `Notes complémentaires : ${supporting_notes}` : ""}`;
       return new Response(JSON.stringify({ error: "Aucune lettre générée" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Save the letter (premium_access_id is now nullable)
+    // Save the letter
     const { error: insertError } = await supabaseAdmin.from("generated_letters").insert({
       user_id: user.id,
       premium_access_id: null,
@@ -149,38 +170,30 @@ ${supporting_notes ? `Notes complémentaires : ${supporting_notes}` : ""}`;
       metadata: { university_name, program_name },
     });
 
-    // Send webhook to n8n (fire and forget)
-    const N8N_WEBHOOK_URL = Deno.env.get("N8N_WEBHOOK_URL");
-    if (N8N_WEBHOOK_URL) {
-      // Fetch user profile for lead data
-      const { data: profile } = await supabaseAdmin
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
+    // Send webhook to n8n (fire and forget — never blocks response)
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-      fetch(N8N_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          event_type: "recours_generated",
-          user_id: user.id,
-          full_name: profile?.full_name,
-          email: profile?.email || user.email,
-          whatsapp_number: profile?.whatsapp_number,
-          country: profile?.country,
-          nationality: profile?.nationality,
-          current_academic_level: profile?.current_academic_level,
-          target_level_in_france: profile?.target_level_in_france,
-          field_of_study: profile?.field_of_study,
-          university_name,
-          program_name,
-          refusal_reason,
-          generated_letter_text: letterText,
-          created_at: new Date().toISOString(),
-        }),
-      }).catch((err) => console.error("n8n webhook error:", err));
-    }
+    fireWebhooks({
+      event_type: "recours_generated",
+      user_id: user.id,
+      full_name: profile?.full_name,
+      email: profile?.email || user.email,
+      whatsapp_number: profile?.whatsapp_number,
+      country: profile?.country,
+      nationality: profile?.nationality,
+      current_academic_level: profile?.current_academic_level,
+      target_level_in_france: profile?.target_level_in_france,
+      field_of_study: profile?.field_of_study,
+      university_name,
+      program_name,
+      refusal_reason,
+      generated_letter_text: letterText,
+      created_at: new Date().toISOString(),
+    });
 
     return new Response(JSON.stringify({ letter_text: letterText }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
