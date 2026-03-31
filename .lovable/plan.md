@@ -1,102 +1,67 @@
 
 
-# Plan : Raffinement UX, copywriting et conversion
+# Plan : Améliorations ciblées
 
-## 1. Landing page — Empathie + conversion
+## 1. Désactiver la confirmation d'email
 
-**Fichier** : `src/pages/Index.tsx`
+Utiliser l'outil `configure_auth` pour activer l'auto-confirm des emails. Les utilisateurs seront connectés immédiatement après inscription sans devoir cliquer sur un lien.
 
-- Ajouter un bloc émotionnel d'empathie avant le hero : "On sait que recevoir un refus est difficile. Tu mérites une deuxième chance."
-- Renforcer le subheadline pour être plus direct et rassurant
-- Ajouter une section "Comment ça marche" en 3 étapes numérotées (Inscris-toi → Remplis ton dossier → Reçois ta lettre)
-- Rendre le WhatsApp CTA plus proéminent dans la section basse (fond vert, texte plus gros)
-- Ajouter un compteur social proof type "Des centaines d'étudiants utilisent déjà cet outil"
+Conséquence sur `Inscription.tsx` : après `signInWithOtp` réussi, rediriger directement vers `/dashboard` au lieu d'afficher "Vérifie ta boîte mail". Idem pour `Connexion.tsx`.
 
-## 2. WhatsApp CTA — Visibilité maximale
+## 2. Message de réassurance sur les champs email/WhatsApp
 
-**Fichier** : `src/components/WhatsAppCTA.tsx`
+**Fichiers** : `src/pages/Inscription.tsx`, `src/pages/Connexion.tsx`
 
-- Ajouter une variante `prominent` avec animation pulse subtile, icône plus grande
-- Ajouter un texte secondaire sous le bouton : "Réponse rapide garantie"
+Ajouter sous les champs email et WhatsApp un texte d'aide visible :
+> « Assure-toi que ton email et ton numéro WhatsApp soient corrects. Tu recevras ta lettre de recours gratuite par ces moyens. »
 
-**Fichier** : `src/components/UpsellBlock.tsx`
+Stylé en `text-xs text-amber-600` avec une icône info pour attirer l'attention sans être intrusif.
 
-- Rendre le bloc visuellement plus fort : bordure verte, fond plus contrasté
-- Ajouter une icône France/drapeau
-- Reformuler le copy pour plus d'urgence : "La rentrée de septembre 2026 approche..."
+## 3. Configurer les webhooks n8n avec les vraies URLs
 
-## 3. Dashboard — Clarté et guidance
-
-**Fichier** : `src/pages/Dashboard.tsx`
-
-- Ajouter un message d'encouragement contextuel ("Tu as déjà généré X recours" ou "C'est le moment de commencer")
-- Rendre le bouton "Générer un recours" encore plus visible avec un sous-texte "100% gratuit, en 3 minutes"
-- Ajouter le WhatsApp CTA directement sur le dashboard (pas seulement dans l'UpsellBlock)
-- Ajouter un bloc de réassurance émotionnelle pour les nouveaux utilisateurs : "Un refus ne veut pas dire la fin de ton projet"
-
-## 4. Formulaire NouveauRecours — Exemples et réassurance
-
-**Fichier** : `src/pages/recours/NouveauRecours.tsx`
-
-- Ajouter des exemples concrets sous CHAQUE champ (reprendre les exemples du plan précédent pour les champs qui n'en ont pas encore)
-- Ajouter un message de réassurance en haut du formulaire : "Pas de stress, on te guide étape par étape"
-- Sur l'étape 3, ajouter un indicateur "Gratuit — aucun paiement requis" pour rassurer
-- Sur le résultat (step 4) : renforcer le bloc post-génération avec UpsellBlock plus visible, WhatsApp CTA agrandi, et message émotionnel "Bravo, tu as fait un pas important"
-
-## 5. Copywriting — Nettoyage et ton empathique
-
-Tous fichiers UI :
-- Remplacer "dashboard" par "tableau de bord" dans les textes visibles utilisateur (bouton retour, etc.)
-- Vérifier qu'aucun mot "premium", "activation", "paiement", "payé" ne reste dans le code frontend
-- S'assurer que le mot "gratuit" apparaît naturellement sans être trop répétitif
-
-## 6. Admin — Meilleure visibilité leads
-
-**Fichier** : `src/pages/admin/Leads.tsx`
-
-- Ajouter les colonnes Nationalité, Niveau actuel, Domaine d'études dans le tableau
-- Ajouter un badge coloré pour les profils complets vs incomplets
-- Ajouter le nombre de recours générés par lead
-
-**Fichier** : `src/pages/admin/Analytics.tsx`
-
-- Ajouter le taux de conversion signup → recours généré
-- Ajouter les derniers événements récents en liste
-
-## 7. Mobile — Polish
-
-**Fichiers** : `src/components/AppLayout.tsx`, `src/components/MobileNav.tsx`
-
-- Ajouter `safe-area-inset` padding en haut du header pour les mobiles avec notch
-- S'assurer que la nav bottom a assez de padding pour les iPhones avec barre home
-- Rendre les tableaux admin scrollables horizontalement sur mobile
-
-## 8. Webhook — Robustesse et TODO
-
-**Fichier** : `supabase/functions/n8n-webhook/index.ts`
-
-- Ajouter des TODO clairs avec format `// TODO(n8n):` pour faciliter la recherche
-- Ajouter un retry simple (1 retry) en cas d'échec réseau
-- Loguer le payload envoyé (sans données sensibles) pour le debugging
+**Secret à ajouter** : `N8N_WEBHOOK_URL` avec la valeur `https://n8n.kpbeducation.cloud/webhook/a13f20d3-64d8-4f59-950e-39bee66c3edf`
 
 **Fichier** : `supabase/functions/generate-letter/index.ts`
 
-- Ajouter un TODO pour le webhook URL
-- S'assurer que l'appel webhook n'est jamais bloquant même en cas de timeout
+Modifier la section webhook pour envoyer vers les **deux URLs** (production + test) :
+- `https://n8n.kpbeducation.cloud/webhook/a13f20d3-64d8-4f59-950e-39bee66c3edf` (production)
+- `https://n8n.kpbeducation.cloud/webhook-test/a13f20d3-64d8-4f59-950e-39bee66c3edf` (test)
 
-## Résumé des fichiers impactés
+Les deux appels seront fire-and-forget pour ne pas bloquer la réponse.
+
+**Fichier** : `supabase/functions/n8n-webhook/index.ts`
+
+Même modification : utiliser les deux URLs.
+
+## 4. Améliorer la page de résultat post-génération
+
+**Fichier** : `src/pages/recours/NouveauRecours.tsx` (step 4)
+
+Restructurer la page résultat avec un copywriting de conversion fort :
+
+1. **Succès émotionnel** — "Ta lettre est prête ! Tu viens de faire un pas courageux."
+2. **La lettre** + boutons Copier/Télécharger
+3. **Disclaimers** (courts)
+4. **Bloc de conversion renforcé** — Refonte complète de l'UpsellBlock avec :
+   - Titre accrocheur : "Tu as un plan A. Et si tu préparais aussi un plan B ?"
+   - Sous-titre : "Chaque année, des centaines d'étudiants obtiennent leur visa grâce aux écoles privées en France."
+   - 3 points de valeur : ✅ Admissions ouvertes jusqu'en juillet · ✅ Accompagnement personnalisé · ✅ Visa étudiant garanti si admis
+   - CTA WhatsApp très visible (vert, pleine largeur)
+
+**Fichier** : `src/components/UpsellBlock.tsx`
+
+Refonte complète du composant avec le nouveau copywriting orienté conversion "Plan B école privée".
+
+## 5. Fichiers impactés
 
 | Fichier | Changement |
 |---------|-----------|
-| `src/pages/Index.tsx` | Empathie hero, section "comment ça marche", social proof |
-| `src/pages/Dashboard.tsx` | Messages contextuels, WhatsApp CTA, réassurance |
-| `src/pages/recours/NouveauRecours.tsx` | Exemples complets, réassurance, résultat renforcé |
-| `src/components/WhatsAppCTA.tsx` | Variante proéminente, sous-texte |
-| `src/components/UpsellBlock.tsx` | Visuel renforcé, urgence |
-| `src/components/AppLayout.tsx` | Safe area padding mobile |
-| `src/components/MobileNav.tsx` | Safe area bottom |
-| `src/pages/admin/Leads.tsx` | Colonnes enrichies, badges |
-| `src/pages/admin/Analytics.tsx` | Taux conversion, événements récents |
-| `supabase/functions/n8n-webhook/index.ts` | TODO, retry, logging |
-| `supabase/functions/generate-letter/index.ts` | TODO webhook |
+| `src/pages/Inscription.tsx` | Auto-login après signup, message réassurance email/WhatsApp |
+| `src/pages/Connexion.tsx` | Auto-login, message réassurance |
+| `src/pages/recours/NouveauRecours.tsx` | Page résultat améliorée, copywriting conversion |
+| `src/components/UpsellBlock.tsx` | Refonte copywriting "Plan B" |
+| `supabase/functions/generate-letter/index.ts` | Deux URLs webhook n8n |
+| `supabase/functions/n8n-webhook/index.ts` | Deux URLs webhook n8n |
+| Auth config | Auto-confirm email activé |
+| Secret | `N8N_WEBHOOK_URL` configuré |
 
