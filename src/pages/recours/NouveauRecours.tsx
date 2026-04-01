@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,7 +47,7 @@ export default function NouveauRecours() {
   const trackEvent = useTrackEvent();
   const queryClient = useQueryClient();
 
-  useEffect(() => { trackEvent("recours_started"); }, []);
+  
 
   const updateField = (field: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
