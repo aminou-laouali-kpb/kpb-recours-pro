@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { UpsellBlock } from "@/components/UpsellBlock";
 import { Link } from "react-router-dom";
 import { PenLine, FileText, AlertCircle, User, Heart, Sparkles } from "lucide-react";
-import { useTrackEvent } from "@/hooks/useTrackEvent";
 import { WhatsAppCTA } from "@/components/WhatsAppCTA";
 
 export default function Dashboard() {
