@@ -38,9 +38,6 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  useEffect(() => {
-    trackEvent("dashboard_viewed");
-  }, []);
 
   const profileComplete = profile?.full_name && profile?.whatsapp_number && profile?.country;
 

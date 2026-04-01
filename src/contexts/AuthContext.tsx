@@ -28,24 +28,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session?.user?.email) {
-        setTimeout(() => checkAdmin(session.user.email!), 0);
-      } else {
-        setIsAdmin(false);
-      }
       setIsLoading(false);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session?.user?.email) {
-        checkAdmin(session.user.email);
-      }
       setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      checkAdmin(session.user.email);
+    } else {
+      setIsAdmin(false);
+    }
+  }, [session?.user?.email]);
 
   async function checkAdmin(email: string) {
     const { data } = await supabase.rpc("is_admin", { check_email: email });

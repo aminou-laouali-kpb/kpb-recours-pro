@@ -7,12 +7,12 @@ export function useTrackEvent() {
   const { user } = useAuth();
 
   return useCallback(
-    async (eventName: string, metadata?: Record<string, unknown>) => {
-      await supabase.from("events").insert([{
+    (eventName: string, metadata?: Record<string, unknown>) => {
+      supabase.from("events").insert([{
         user_id: user?.id ?? null,
         event_name: eventName,
         metadata: (metadata ?? {}) as Json,
-      }]);
+      }]).then(() => {});
     },
     [user]
   );

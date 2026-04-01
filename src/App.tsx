@@ -45,18 +45,6 @@ const App = () => (
             <Route path="/admin/recours" element={<ProtectedRoute requireAdmin><AdminRecours /></ProtectedRoute>} />
             <Route path="/admin/analytics" element={<ProtectedRoute requireAdmin><AdminAnalytics /></ProtectedRoute>} />
 
-            {/* Legacy redirects */}
-            <Route path="/premium/dashboard" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/premium/nouvelle-lettre" element={<Navigate to="/recours/nouveau" replace />} />
-            <Route path="/premium/historique" element={<Navigate to="/recours/historique" replace />} />
-            <Route path="/premium/mon-acces" element={<Navigate to="/mon-profil" replace />} />
-            <Route path="/activation" element={<Navigate to="/" replace />} />
-            <Route path="/payer" element={<Navigate to="/" replace />} />
-            <Route path="/access-check" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/payments/*" element={<Navigate to="/" replace />} />
-            <Route path="/admin/premium-access" element={<Navigate to="/admin/leads" replace />} />
-            <Route path="/admin/orders" element={<Navigate to="/admin/recours" replace />} />
-            <Route path="/admin/generated-letters" element={<Navigate to="/admin/analytics" replace />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
