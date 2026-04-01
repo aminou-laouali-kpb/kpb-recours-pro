@@ -47,7 +47,7 @@ export default function NouveauRecours() {
   const trackEvent = useTrackEvent();
   const queryClient = useQueryClient();
 
-  useEffect(() => { trackEvent("recours_started"); }, []);
+  
 
   const updateField = (field: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
