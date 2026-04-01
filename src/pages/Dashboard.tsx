@@ -11,7 +11,6 @@ import { WhatsAppCTA } from "@/components/WhatsAppCTA";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const trackEvent = useTrackEvent();
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
